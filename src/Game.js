@@ -4,13 +4,14 @@ import React, { useRef, useEffect, useState } from 'react';
 const Game = ({ onExit }) => {
   const canvasRef = useRef(null);
   const playerRef = useRef({ x: 50, y: 200, width: 60, height: 60, vy: 0, jumping: false });
-  const obstaclesRef = useRef([]);
+  const obstaclesRef = useRef([]);  // Ostacoli normali
   const obstacleTimer = useRef(0);
   const obstacleDelay = useRef(120);
   const scoreRef = useRef(0);
   const particlesRef = useRef([]);
   const [gameOver, setGameOver] = useState(false);
   const [restart, setRestart] = useState(0);
+  const [victory, setVictory] = useState(false); // Nuovo: Stato per la vittoria
   const gameOverRef = useRef(false);
   const gameOverSoundPlayedRef = useRef(false);
   const gameOverAudioRef = useRef(null);
@@ -45,6 +46,7 @@ const Game = ({ onExit }) => {
     gameOverRef.current = false;
     gameOverSoundPlayedRef.current = false;
     obstacleSpeedRef.current = 3;
+    setVictory(false); // Reset della vittoria
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -58,7 +60,16 @@ const Game = ({ onExit }) => {
     const backgroundImage = new Image();
     backgroundImage.src = '/background.png';
 
-    const obstacleImagePaths = ['/pizza.png', '/burger.png', '/fries.png'];
+    const obstacleImagePaths = [
+      "/pizza.png",
+      "/burger.png",
+      "/fries.png",
+      "/hotdog.png",
+      "/icecream.png",
+      "/donut.png",
+      "/soda.png",
+      "/cake.png",
+    ];
     const obstacleImages = obstacleImagePaths.map(src => {
       const img = new Image();
       img.src = src;
@@ -164,6 +175,13 @@ const Game = ({ onExit }) => {
           obstacle.scored = true;
           scoreRef.current++;
 
+          // Nuovo: Vittoria al raggiungimento di 100 punti
+          if (scoreRef.current >= 100) {
+            setVictory(true);
+            setGameOver(true); // Mostra il game over quando Antonello vince
+            return;
+          }
+
           if (scoreRef.current % 10 === 0) {
             obstacleSpeedRef.current += 0.5;
             obstacleDelay.current += 10;
@@ -178,9 +196,21 @@ const Game = ({ onExit }) => {
         }
       });
 
-      ctx.fillStyle = 'black';
-      ctx.font = '20px Arial';
-      ctx.fillText('Score: ' + scoreRef.current, 10, 20);
+      // **Score centrale e in stile arcade**
+      ctx.fillStyle = 'yellow';
+      ctx.font = 'bold 60px "Press Start 2P", monospace';  // Usando una font da gioco arcade
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'black';  // Ombra per l'effetto arcade
+      ctx.shadowBlur = 10;
+      ctx.fillText(`Score: ${scoreRef.current}`, canvas.width / 2, 100);  // Posizionato al centro del canvas
+
+      // Se il gioco è vinto, mostra il messaggio di vittoria
+      if (victory) {
+        ctx.fillStyle = 'green';
+        ctx.font = 'bold 50px "Press Start 2P", monospace';
+        ctx.fillText("🎉 Antonello ha vinto! 🎉", canvas.width / 2, canvas.height / 2);
+      }
 
       animationFrameId = requestAnimationFrame(update);
     };
@@ -197,7 +227,7 @@ const Game = ({ onExit }) => {
         obstacleAudioRef.current.currentTime = 0;
       }
     };
-  }, [restart]);
+  }, [restart, victory]);
 
   const handleKeyDown = (e) => {
     if (e.key === ' ' && !playerRef.current.jumping && !gameOver) {
@@ -250,7 +280,7 @@ const Game = ({ onExit }) => {
         }}
       />
 
-      {gameOver && (
+      {gameOver && !victory && (
         <div
           style={{
             position: 'absolute',
@@ -289,7 +319,6 @@ const Game = ({ onExit }) => {
               src="/fire.png"
               alt="fire"
               style={{ width: '200px', height: '300px' }}
-              
             /></div>
 
           <button
@@ -303,7 +332,57 @@ const Game = ({ onExit }) => {
               color: 'white',
             }}
           >
-             Ricomincia la sfida!
+            🔁 Ricomincia la sfida!
+          </button>
+        </div>
+      )}
+
+      {victory && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            color: 'white',
+            padding: '3rem',
+            borderRadius: '20px',
+            zIndex: 99,
+            width: '90%',
+            maxWidth: '500px',
+            textAlign: 'center',
+            boxShadow: '0 0 20px black',
+          }}
+        >
+          <h1
+            style={{
+              fontSize: '2.5rem',
+              fontWeight: 'bold',
+              color: 'green',
+              textShadow: '2px 2px black',
+              marginBottom: '1rem',
+            }}
+          >
+            🎉 VITTORIA 🎉
+          </h1>
+
+          <p style={{ fontSize: '1.2rem', marginBottom: '2rem' }}>
+            Antonello ha superato tutti i cibi! Ha vinto con <strong>{scoreRef.current}</strong> punti! 🎉
+          </p>
+
+          <button
+            onClick={onExit}
+            className="btn btn-success fw-bold px-4 py-3 shadow d-flex align-items-center justify-content-center gap-3"
+            style={{
+              fontSize: '1.3rem',
+              borderRadius: '15px',
+              border: '3px solid white',
+              background: 'linear-gradient(45deg, #00cc00, #66ff66)',
+              color: 'white',
+            }}
+          >
+            🎮 Ricomincia la sfida!
           </button>
         </div>
       )}
